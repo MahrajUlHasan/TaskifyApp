@@ -1,30 +1,31 @@
-// API Configuration
-export const API_CONFIG = {
-  BASE_URL: 'http://localhost:8080/api/v1', // Change this to your Spring Boot backend URL
-  TIMEOUT: 10000,
-};
+// Local Storage Configuration (No API needed - all data stored locally)
+// API Configuration (Commented out - using local storage instead)
+// export const API_CONFIG = {
+//   BASE_URL: 'http://localhost:8080/api/v1',
+//   TIMEOUT: 10000,
+// };
 
-// API Endpoints
-export const API_ENDPOINTS = {
-  // Authentication
-  LOGIN: '/auth/login',
-  REGISTER: '/auth/register',
-  ADMIN_LOGIN: '/auth/admin/login',
-  REFRESH_TOKEN: '/auth/refresh',
-  
-  // Users
-  USERS: '/users',
-  USER_PROFILE: '/users/profile',
-  
-  // Tasks
-  TASKS: '/tasks',
-  TASK_BY_ID: (id: string) => `/tasks/${id}`,
-  TASKS_BY_QUADRANT: (quadrant: string) => `/tasks/quadrant/${quadrant}`,
-  
-  // Admin
-  ADMIN_USERS: '/admin/users',
-  ADMIN_STATS: '/admin/stats',
-};
+// API Endpoints (Commented out - using local storage instead)
+// export const API_ENDPOINTS = {
+//   // Authentication
+//   LOGIN: '/auth/login',
+//   REGISTER: '/auth/register',
+//   ADMIN_LOGIN: '/auth/admin/login',
+//   REFRESH_TOKEN: '/auth/refresh',
+//
+//   // Users
+//   USERS: '/users',
+//   USER_PROFILE: '/users/profile',
+//
+//   // Tasks
+//   TASKS: '/tasks',
+//   TASK_BY_ID: (id: string) => `/tasks/${id}`,
+//   TASKS_BY_QUADRANT: (quadrant: string) => `/tasks/quadrant/${quadrant}`,
+//
+//   // Admin
+//   ADMIN_USERS: '/admin/users',
+//   ADMIN_STATS: '/admin/stats',
+// };
 
 // Storage Keys
 export const STORAGE_KEYS = {

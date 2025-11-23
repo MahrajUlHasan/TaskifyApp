@@ -7,6 +7,7 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'expo-router';
 
@@ -24,8 +25,15 @@ const ProfileScreen: React.FC = () => {
           text: 'Logout',
           style: 'destructive',
           onPress: async () => {
-            await logout();
-            router.replace('/login');
+            try {
+              console.log('ProfileScreen: Starting logout');
+              await logout();
+              console.log('ProfileScreen: Logout successful, navigating to login');
+              router.replace('/login');
+            } catch (error) {
+              console.error('ProfileScreen: Logout error:', error);
+              Alert.alert('Error', 'Failed to logout. Please try again.');
+            }
           },
         },
       ]
@@ -41,21 +49,22 @@ const ProfileScreen: React.FC = () => {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+    <SafeAreaView style={styles.safeArea} edges={[]}>
+      <ScrollView style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+            </Text>
+          </View>
+          <Text style={styles.userName}>
+            {user.firstName} {user.lastName}
           </Text>
+          <Text style={styles.userEmail}>{user.email}</Text>
+          <View style={[styles.roleTag, { backgroundColor: user.role === 'ADMIN' ? '#FF6B6B' : '#4ECDC4' }]}>
+            <Text style={styles.roleText}>{user.role}</Text>
+          </View>
         </View>
-        <Text style={styles.userName}>
-          {user.firstName} {user.lastName}
-        </Text>
-        <Text style={styles.userEmail}>{user.email}</Text>
-        <View style={[styles.roleTag, { backgroundColor: user.role === 'ADMIN' ? '#FF6B6B' : '#4ECDC4' }]}>
-          <Text style={styles.roleText}>{user.role}</Text>
-        </View>
-      </View>
 
       <View style={styles.infoSection}>
         <Text style={styles.sectionTitle}>Account Information</Text>
@@ -101,10 +110,15 @@ const ProfileScreen: React.FC = () => {
         </Text>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#007AFF',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',

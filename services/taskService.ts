@@ -1,27 +1,40 @@
-import { apiClient } from './apiClient';
-import { API_ENDPOINTS } from '../constants/api';
-import { 
-  Task, 
-  CreateTaskRequest, 
-  UpdateTaskRequest, 
-  ApiResponse, 
+import { localStorageService } from './localStorageService';
+import { authService } from './authService';
+import {
+  Task,
+  CreateTaskRequest,
+  UpdateTaskRequest,
   PaginatedResponse,
-  EisenhowerQuadrant 
+  EisenhowerQuadrant
 } from '../types';
 
 class TaskService {
+  private async getCurrentUserId(): Promise<string> {
+    const user = await authService.getCurrentUser();
+    if (!user) {
+      throw new Error('No user logged in');
+    }
+    return user.id;
+  }
+
   // Get all tasks for current user
   async getTasks(page: number = 0, size: number = 20): Promise<PaginatedResponse<Task>> {
     try {
-      const response = await apiClient.get<ApiResponse<PaginatedResponse<Task>>>(
-        `${API_ENDPOINTS.TASKS}?page=${page}&size=${size}`
-      );
+      const userId = await this.getCurrentUserId();
+      const allTasks = await localStorageService.getUserTasks(userId);
 
-      if (response.success && response.data) {
-        return response.data;
-      } else {
-        throw new Error(response.message || 'Failed to fetch tasks');
-      }
+      // Implement pagination
+      const startIndex = page * size;
+      const endIndex = startIndex + size;
+      const paginatedTasks = allTasks.slice(startIndex, endIndex);
+
+      return {
+        content: paginatedTasks,
+        totalElements: allTasks.length,
+        totalPages: Math.ceil(allTasks.length / size),
+        size,
+        number: page,
+      };
     } catch (error: any) {
       throw new Error(error.message || 'Failed to fetch tasks');
     }
@@ -30,15 +43,14 @@ class TaskService {
   // Get task by ID
   async getTaskById(id: string): Promise<Task> {
     try {
-      const response = await apiClient.get<ApiResponse<Task>>(
-        API_ENDPOINTS.TASK_BY_ID(id)
-      );
+      const userId = await this.getCurrentUserId();
+      const task = await localStorageService.getTaskById(id, userId);
 
-      if (response.success && response.data) {
-        return response.data;
-      } else {
-        throw new Error(response.message || 'Failed to fetch task');
+      if (!task) {
+        throw new Error('Task not found');
       }
+
+      return task;
     } catch (error: any) {
       throw new Error(error.message || 'Failed to fetch task');
     }
@@ -47,15 +59,8 @@ class TaskService {
   // Get tasks by Eisenhower quadrant
   async getTasksByQuadrant(quadrant: EisenhowerQuadrant): Promise<Task[]> {
     try {
-      const response = await apiClient.get<ApiResponse<Task[]>>(
-        API_ENDPOINTS.TASKS_BY_QUADRANT(quadrant)
-      );
-
-      if (response.success && response.data) {
-        return response.data;
-      } else {
-        throw new Error(response.message || 'Failed to fetch tasks by quadrant');
-      }
+      const userId = await this.getCurrentUserId();
+      return await localStorageService.getTasksByQuadrant(userId, quadrant);
     } catch (error: any) {
       throw new Error(error.message || 'Failed to fetch tasks by quadrant');
     }
@@ -64,16 +69,8 @@ class TaskService {
   // Create new task
   async createTask(taskData: CreateTaskRequest): Promise<Task> {
     try {
-      const response = await apiClient.post<ApiResponse<Task>>(
-        API_ENDPOINTS.TASKS,
-        taskData
-      );
-
-      if (response.success && response.data) {
-        return response.data;
-      } else {
-        throw new Error(response.message || 'Failed to create task');
-      }
+      const userId = await this.getCurrentUserId();
+      return await localStorageService.createTask(userId, taskData);
     } catch (error: any) {
       throw new Error(error.message || 'Failed to create task');
     }
@@ -82,16 +79,8 @@ class TaskService {
   // Update task
   async updateTask(id: string, taskData: UpdateTaskRequest): Promise<Task> {
     try {
-      const response = await apiClient.put<ApiResponse<Task>>(
-        API_ENDPOINTS.TASK_BY_ID(id),
-        taskData
-      );
-
-      if (response.success && response.data) {
-        return response.data;
-      } else {
-        throw new Error(response.message || 'Failed to update task');
-      }
+      const userId = await this.getCurrentUserId();
+      return await localStorageService.updateTask(id, userId, taskData);
     } catch (error: any) {
       throw new Error(error.message || 'Failed to update task');
     }
@@ -100,13 +89,8 @@ class TaskService {
   // Delete task
   async deleteTask(id: string): Promise<void> {
     try {
-      const response = await apiClient.delete<ApiResponse<void>>(
-        API_ENDPOINTS.TASK_BY_ID(id)
-      );
-
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to delete task');
-      }
+      const userId = await this.getCurrentUserId();
+      await localStorageService.deleteTask(id, userId);
     } catch (error: any) {
       throw new Error(error.message || 'Failed to delete task');
     }
@@ -166,15 +150,21 @@ class TaskService {
   // Search tasks
   async searchTasks(query: string, page: number = 0, size: number = 20): Promise<PaginatedResponse<Task>> {
     try {
-      const response = await apiClient.get<ApiResponse<PaginatedResponse<Task>>>(
-        `${API_ENDPOINTS.TASKS}/search?q=${encodeURIComponent(query)}&page=${page}&size=${size}`
-      );
+      const userId = await this.getCurrentUserId();
+      const allTasks = await localStorageService.searchTasks(userId, query);
 
-      if (response.success && response.data) {
-        return response.data;
-      } else {
-        throw new Error(response.message || 'Failed to search tasks');
-      }
+      // Implement pagination
+      const startIndex = page * size;
+      const endIndex = startIndex + size;
+      const paginatedTasks = allTasks.slice(startIndex, endIndex);
+
+      return {
+        content: paginatedTasks,
+        totalElements: allTasks.length,
+        totalPages: Math.ceil(allTasks.length / size),
+        size,
+        number: page,
+      };
     } catch (error: any) {
       throw new Error(error.message || 'Failed to search tasks');
     }

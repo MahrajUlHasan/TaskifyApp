@@ -71,11 +71,16 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       setError(null);
+      console.log('TaskContext: Starting delete task with id:', id);
       await taskService.deleteTask(id);
-      setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
+      setTasks(prevTasks => {
+        const filteredTasks = prevTasks.filter(task => task.id !== id);
+        console.log('TaskContext: Task deleted, remaining tasks:', filteredTasks.length);
+        return filteredTasks;
+      });
     } catch (err: any) {
       setError(err.message || 'Failed to delete task');
-      console.error('Delete task error:', err);
+      console.error('TaskContext: Delete task error:', err);
       throw err;
     } finally {
       setIsLoading(false);

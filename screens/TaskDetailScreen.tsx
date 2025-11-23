@@ -7,6 +7,7 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTask } from '../contexts/TaskContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Task } from '../types';
@@ -91,16 +92,17 @@ const TaskDetailScreen: React.FC = () => {
   const statusInfo = TASK_STATUSES[task.status];
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Task Details</Text>
-        <TouchableOpacity onPress={handleEdit}>
-          <Text style={styles.editButton}>Edit</Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={styles.backButton}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Task Details</Text>
+          <TouchableOpacity onPress={handleEdit}>
+            <Text style={styles.editButton}>Edit</Text>
+          </TouchableOpacity>
+        </View>
 
       <ScrollView style={styles.content}>
         <View style={styles.titleSection}>
@@ -181,11 +183,16 @@ const TaskDetailScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#007AFF',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',

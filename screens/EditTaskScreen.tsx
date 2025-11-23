@@ -10,12 +10,14 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTask } from '../contexts/TaskContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { TaskPriority, EisenhowerQuadrant, TaskStatus } from '../types';
 import { TASK_PRIORITIES, EISENHOWER_QUADRANTS, TASK_STATUSES } from '../constants/api';
+import { calculateEisenhowerQuadrant, getQuadrantReason, getDeadlineUrgencyText } from '../utils/eisenhowerUtils';
 
 const EditTaskScreen: React.FC = () => {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
@@ -52,6 +54,12 @@ const EditTaskScreen: React.FC = () => {
       }
     }
   }, [taskId]);
+
+  // Automatically recalculate Eisenhower quadrant when priority or dueDate changes
+  useEffect(() => {
+    const quadrant = calculateEisenhowerQuadrant(formData.priority, formData.dueDate);
+    setFormData(prev => ({ ...prev, eisenhowerQuadrant: quadrant }));
+  }, [formData.priority, formData.dueDate]);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -90,7 +98,7 @@ const EditTaskScreen: React.FC = () => {
         dueDate: formData.dueDate?.toISOString(),
       });
       Alert.alert('Success', 'Task updated successfully', [
-        { text: 'OK', onPress: () => router.back() }
+        { text: 'OK', onPress: () => router.replace('/(main)/tasks') }
       ]);
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to update task');
@@ -99,22 +107,27 @@ const EditTaskScreen: React.FC = () => {
     }
   };
 
+  const handleCancel = () => {
+    router.replace('/(main)/tasks');
+  };
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.cancelButton}>Cancel</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Task</Text>
-        <TouchableOpacity onPress={handleSubmit} disabled={isLoading}>
-          <Text style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}>
-            {isLoading ? 'Saving...' : 'Save'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleCancel}>
+            <Text style={styles.cancelButton}>Cancel</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Edit Task</Text>
+          <TouchableOpacity onPress={handleSubmit} disabled={isLoading}>
+            <Text style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}>
+              {isLoading ? 'Saving...' : 'Save'}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
       <ScrollView style={styles.form}>
         <View style={styles.inputGroup}>
@@ -180,21 +193,19 @@ const EditTaskScreen: React.FC = () => {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Eisenhower Quadrant</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={formData.eisenhowerQuadrant}
-              onValueChange={(value) => handleInputChange('eisenhowerQuadrant', value)}
-              style={styles.picker}
-            >
-              {Object.entries(EISENHOWER_QUADRANTS).map(([key, quadrant]) => (
-                <Picker.Item
-                  key={key}
-                  label={`${quadrant.title} - ${quadrant.subtitle}`}
-                  value={quadrant.key}
-                />
-              ))}
-            </Picker>
+          <Text style={styles.label}>Eisenhower Quadrant (Auto-calculated)</Text>
+          <View style={styles.quadrantInfoContainer}>
+            <View style={[styles.quadrantBadge, { backgroundColor: EISENHOWER_QUADRANTS[formData.eisenhowerQuadrant].color }]}>
+              <Text style={styles.quadrantTitle}>
+                {EISENHOWER_QUADRANTS[formData.eisenhowerQuadrant].title}
+              </Text>
+              <Text style={styles.quadrantSubtitle}>
+                {EISENHOWER_QUADRANTS[formData.eisenhowerQuadrant].subtitle}
+              </Text>
+            </View>
+            <Text style={styles.quadrantReason}>
+              {getQuadrantReason(formData.priority, formData.dueDate)}
+            </Text>
           </View>
         </View>
 
@@ -212,12 +223,17 @@ const EditTaskScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
           {formData.dueDate && (
-            <TouchableOpacity
-              style={styles.clearDateButton}
-              onPress={() => handleInputChange('dueDate', null)}
-            >
-              <Text style={styles.clearDateText}>Clear Date</Text>
-            </TouchableOpacity>
+            <>
+              <Text style={styles.deadlineUrgency}>
+                {getDeadlineUrgencyText(formData.dueDate)}
+              </Text>
+              <TouchableOpacity
+                style={styles.clearDateButton}
+                onPress={() => handleInputChange('dueDate', null)}
+              >
+                <Text style={styles.clearDateText}>Clear Date</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
 
@@ -232,10 +248,15 @@ const EditTaskScreen: React.FC = () => {
         )}
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#007AFF',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
@@ -318,6 +339,41 @@ const styles = StyleSheet.create({
   clearDateText: {
     fontSize: 14,
     color: '#FF3B30',
+  },
+  quadrantInfoContainer: {
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  quadrantBadge: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  quadrantTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 4,
+  },
+  quadrantSubtitle: {
+    fontSize: 14,
+    color: 'white',
+    opacity: 0.9,
+  },
+  quadrantReason: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
+  deadlineUrgency: {
+    fontSize: 14,
+    color: '#007AFF',
+    marginTop: 8,
+    fontWeight: '600',
   },
 });
 

@@ -47,14 +47,14 @@ A comprehensive task management application built with React Native and Expo, fe
 - **TypeScript** for type safety
 - **Expo Router** for navigation
 - **React Context** for state management
-- **Axios** for API communication
-- **AsyncStorage** for local data persistence
+- **AsyncStorage** for local data persistence and authentication
 
-### Backend Requirements
-- **Spring Boot** REST API
-- **JWT** authentication
-- **PostgreSQL** database
-- **Spring Security** for authentication
+### Data Storage (Local Only)
+- **AsyncStorage** for all data persistence
+- **Local Authentication** with simulated JWT tokens
+- **JSON-based** data structure
+- **Role-based Access Control** (USER/ADMIN)
+- **Default Admin Account**: Username: `admin`, Password: `admin123`
 
 ## Installation
 
@@ -64,6 +64,8 @@ A comprehensive task management application built with React Native and Expo, fe
 - Expo CLI (`npm install -g @expo/cli`)
 - Android Studio (for Android development)
 - Xcode (for iOS development, macOS only)
+
+**Note**: No backend server required - all data is stored locally!
 
 ### Setup Instructions
 
@@ -78,62 +80,34 @@ A comprehensive task management application built with React Native and Expo, fe
    npm install
    ```
 
-3. **Configure API endpoint**
-   Update the `API_CONFIG.BASE_URL` in `constants/api.ts`:
-   ```typescript
-   export const API_CONFIG = {
-     BASE_URL: 'http://your-backend-url:8080/api', // Update this
-     TIMEOUT: 10000,
-   };
-   ```
-
-4. **Start the development server**
+3. **Start the development server**
    ```bash
    npx expo start
    ```
 
-5. **Run on device/simulator**
+4. **Run on device/simulator**
    - For iOS: `npm run ios`
    - For Android: `npm run android`
    - For web: `npm run web`
 
-## API Endpoints
+## Local Data Storage
 
-The app expects the following REST API endpoints from your Spring Boot backend:
+The app uses AsyncStorage for all data persistence:
 
-### Authentication Endpoints
-```
-POST /api/auth/login
-POST /api/auth/register
-POST /api/auth/admin/login
-POST /api/auth/refresh
-```
+### Data Structure
+- **Users**: Stored with authentication credentials and profile information
+- **Tasks**: Linked to users with full CRUD operations
+- **Authentication**: Simulated JWT tokens for session management
+- **Admin Features**: Role-based access control with local validation
 
-### User Endpoints
-```
-GET /api/users/profile
-PUT /api/users/profile
-```
+### Default Accounts
+- **Admin**: Username: `admin`, Password: `admin123`
+- **Regular Users**: Can be created through registration
 
-### Task Endpoints
-```
-GET /api/tasks
-POST /api/tasks
-GET /api/tasks/{id}
-PUT /api/tasks/{id}
-DELETE /api/tasks/{id}
-GET /api/tasks/quadrant/{quadrant}
-GET /api/tasks/search?q={query}
-```
-
-### Admin Endpoints
-```
-GET /api/admin/users
-GET /api/admin/stats
-DELETE /api/admin/users/{id}
-PATCH /api/admin/users/{id}/role
-GET /api/admin/users/search?q={query}
-```
+### Storage Keys
+- User data and authentication tokens
+- Task data with user associations
+- Application state and preferences
 
 ## Project Structure
 
@@ -161,8 +135,8 @@ TaskifyApp/
 ├── contexts/              # React Context providers
 │   ├── AuthContext.tsx    # Authentication state
 │   └── TaskContext.tsx    # Task management state
-├── services/              # API service layers
-│   ├── apiClient.ts       # HTTP client configuration
+├── services/              # Local storage service layers
+│   ├── localStorageService.ts  # Local data storage service
 │   ├── authService.ts     # Authentication services
 │   ├── taskService.ts     # Task management services
 │   └── adminService.ts    # Admin services

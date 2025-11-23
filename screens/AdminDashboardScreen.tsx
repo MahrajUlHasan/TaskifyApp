@@ -10,6 +10,7 @@ import {
   TextInput,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { adminService } from '../services/adminService';
 import { User } from '../types';
@@ -162,16 +163,17 @@ const AdminDashboardScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Admin Dashboard</Text>
-      </View>
+    <SafeAreaView style={styles.safeArea} edges={[]}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Admin Dashboard</Text>
+        </View>
 
-      <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={fetchData} />
-        }
-      >
+        <ScrollView
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={fetchData} />
+          }
+        >
         {/* Statistics */}
         {stats && (
           <View style={styles.statsContainer}>
@@ -211,11 +213,16 @@ const AdminDashboardScreen: React.FC = () => {
           />
         </View>
       </ScrollView>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#007AFF',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',

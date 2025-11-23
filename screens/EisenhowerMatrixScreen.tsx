@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTask } from '../contexts/TaskContext';
 import { Task, EisenhowerQuadrant } from '../types';
 import { EISENHOWER_QUADRANTS } from '../constants/api';
@@ -132,16 +133,17 @@ const EisenhowerMatrixScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Eisenhower Matrix</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push('/add-task')}
-        >
-          <Text style={styles.addButtonText}>+ Add Task</Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={styles.safeArea} edges={[]}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Eisenhower Matrix</Text>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => router.push('/add-task')}
+          >
+            <Text style={styles.addButtonText}>+ Add Task</Text>
+          </TouchableOpacity>
+        </View>
 
       <ScrollView
         style={styles.scrollContainer}
@@ -168,11 +170,16 @@ const EisenhowerMatrixScreen: React.FC = () => {
           <Text style={styles.legendItem}>🟡 Eliminate: Neither - Consider eliminating</Text>
         </View>
       </ScrollView>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#007AFF',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',

@@ -9,10 +9,11 @@ import {
   RefreshControl,
   TextInput,
 } from 'react-native';
-import { useTask } from '@/contexts/TaskContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTask } from '../contexts/TaskContext';
 import { useRouter } from 'expo-router';
-import { Task, TaskStatus, TaskPriority } from '@/types';
-import { TASK_PRIORITIES, TASK_STATUSES } from '@/constants/api';
+import { Task, TaskStatus, TaskPriority } from '../types';
+import { TASK_PRIORITIES, TASK_STATUSES } from '../constants/api';
 
 const TaskListScreen: React.FC = () => {
   const { tasks, isLoading, error, fetchTasks, deleteTask } = useTask();
@@ -45,7 +46,16 @@ const TaskListScreen: React.FC = () => {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => deleteTask(taskId),
+          onPress: async () => {
+            try {
+              console.log('TaskListScreen: Deleting task:', taskId);
+              await deleteTask(taskId);
+              console.log('TaskListScreen: Task deleted successfully');
+            } catch (error) {
+              console.error('TaskListScreen: Delete task error:', error);
+              Alert.alert('Error', 'Failed to delete task. Please try again.');
+            }
+          },
         },
       ]
     );
@@ -147,13 +157,14 @@ const TaskListScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Tasks</Text>
-        <TouchableOpacity style={styles.addButton} onPress={navigateToAddTask}>
-          <Text style={styles.addButtonText}>+ Add</Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Tasks</Text>
+          <TouchableOpacity style={styles.addButton} onPress={navigateToAddTask}>
+            <Text style={styles.addButtonText}>+ Add</Text>
+          </TouchableOpacity>
+        </View>
 
       <View style={styles.searchContainer}>
         <TextInput
@@ -175,11 +186,16 @@ const TaskListScreen: React.FC = () => {
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
       />
-    </View>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#007AFF',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',

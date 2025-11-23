@@ -39,11 +39,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (username: string, password: string): Promise<void> => {
     try {
       setIsLoading(true);
+      console.log('AuthContext: Starting login for username:', username);
       const authResponse = await authService.login({ username, password });
+      console.log('AuthContext: Login successful, user:', authResponse.user);
       setUser(authResponse.user);
       setToken(authResponse.token);
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('AuthContext: Login error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -72,11 +74,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (data: RegisterRequest): Promise<void> => {
     try {
       setIsLoading(true);
+      console.log('AuthContext: Starting registration for username:', data.username);
       const authResponse = await authService.register(data);
+      console.log('AuthContext: Registration successful, user:', authResponse.user);
       setUser(authResponse.user);
       setToken(authResponse.token);
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('AuthContext: Registration error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -86,11 +90,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true);
+      console.log('AuthContext: Starting logout');
       await authService.logout();
       setUser(null);
       setToken(null);
+      console.log('AuthContext: Logout successful');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('AuthContext: Logout error:', error);
     } finally {
       setIsLoading(false);
     }

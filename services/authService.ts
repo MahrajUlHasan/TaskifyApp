@@ -1,29 +1,32 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiClient } from './apiClient';
-import { API_ENDPOINTS, STORAGE_KEYS } from '../constants/api';
-import { 
-  LoginRequest, 
-  RegisterRequest, 
-  AuthResponse, 
-  User, 
-  ApiResponse 
+import { localStorageService } from './localStorageService';
+import {
+  LoginRequest,
+  RegisterRequest,
+  AuthResponse,
+  User
 } from '../types';
 
+// Storage keys for auth data (separate from local storage service keys)
+const AUTH_STORAGE_KEYS = {
+  TOKEN: 'auth_token',
+  USER: 'user_data',
+  REFRESH_TOKEN: 'refresh_token',
+};
+
 class AuthService {
+  // Initialize storage on first use
+  private async ensureInitialized(): Promise<void> {
+    await localStorageService.initializeStorage();
+  }
+
   // Login user
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     try {
-      const response = await apiClient.post<ApiResponse<AuthResponse>>(
-        API_ENDPOINTS.LOGIN,
-        credentials
-      );
-
-      if (response.success && response.data) {
-        await this.storeAuthData(response.data);
-        return response.data;
-      } else {
-        throw new Error(response.message || 'Login failed');
-      }
+      await this.ensureInitialized();
+      const result = await localStorageService.login(credentials);
+      await this.storeAuthData({ token: result.token, user: result.user });
+      return { token: result.token, user: result.user };
     } catch (error: any) {
       throw new Error(error.message || 'Login failed');
     }
@@ -32,17 +35,10 @@ class AuthService {
   // Admin login
   async adminLogin(credentials: LoginRequest): Promise<AuthResponse> {
     try {
-      const response = await apiClient.post<ApiResponse<AuthResponse>>(
-        API_ENDPOINTS.ADMIN_LOGIN,
-        credentials
-      );
-
-      if (response.success && response.data) {
-        await this.storeAuthData(response.data);
-        return response.data;
-      } else {
-        throw new Error(response.message || 'Admin login failed');
-      }
+      await this.ensureInitialized();
+      const result = await localStorageService.adminLogin(credentials);
+      await this.storeAuthData({ token: result.token, user: result.user });
+      return { token: result.token, user: result.user };
     } catch (error: any) {
       throw new Error(error.message || 'Admin login failed');
     }
@@ -51,17 +47,10 @@ class AuthService {
   // Register user
   async register(userData: RegisterRequest): Promise<AuthResponse> {
     try {
-      const response = await apiClient.post<ApiResponse<AuthResponse>>(
-        API_ENDPOINTS.REGISTER,
-        userData
-      );
-
-      if (response.success && response.data) {
-        await this.storeAuthData(response.data);
-        return response.data;
-      } else {
-        throw new Error(response.message || 'Registration failed');
-      }
+      await this.ensureInitialized();
+      const result = await localStorageService.register(userData);
+      await this.storeAuthData({ token: result.token, user: result.user });
+      return { token: result.token, user: result.user };
     } catch (error: any) {
       throw new Error(error.message || 'Registration failed');
     }
@@ -70,12 +59,12 @@ class AuthService {
   // Logout user
   async logout(): Promise<void> {
     try {
+      await localStorageService.logout();
       await AsyncStorage.multiRemove([
-        STORAGE_KEYS.TOKEN,
-        STORAGE_KEYS.USER,
-        STORAGE_KEYS.REFRESH_TOKEN,
+        AUTH_STORAGE_KEYS.TOKEN,
+        AUTH_STORAGE_KEYS.USER,
+        AUTH_STORAGE_KEYS.REFRESH_TOKEN,
       ]);
-      await apiClient.clearAuthToken();
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -84,7 +73,7 @@ class AuthService {
   // Get current user from storage
   async getCurrentUser(): Promise<User | null> {
     try {
-      const userData = await AsyncStorage.getItem(STORAGE_KEYS.USER);
+      const userData = await AsyncStorage.getItem(AUTH_STORAGE_KEYS.USER);
       return userData ? JSON.parse(userData) : null;
     } catch (error) {
       console.error('Get current user error:', error);
@@ -95,7 +84,7 @@ class AuthService {
   // Get auth token from storage
   async getAuthToken(): Promise<string | null> {
     try {
-      return await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
+      return await AsyncStorage.getItem(AUTH_STORAGE_KEYS.TOKEN);
     } catch (error) {
       console.error('Get auth token error:', error);
       return null;
@@ -128,17 +117,14 @@ class AuthService {
   // Update user profile
   async updateProfile(userData: Partial<User>): Promise<User> {
     try {
-      const response = await apiClient.put<ApiResponse<User>>(
-        API_ENDPOINTS.USER_PROFILE,
-        userData
-      );
-
-      if (response.success && response.data) {
-        await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.data));
-        return response.data;
-      } else {
-        throw new Error(response.message || 'Profile update failed');
+      const currentUser = await this.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('No user logged in');
       }
+
+      const updatedUser = await localStorageService.updateProfile(currentUser.id, userData);
+      await AsyncStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(updatedUser));
+      return updatedUser;
     } catch (error: any) {
       throw new Error(error.message || 'Profile update failed');
     }
@@ -148,10 +134,9 @@ class AuthService {
   private async storeAuthData(authData: AuthResponse): Promise<void> {
     try {
       await AsyncStorage.multiSet([
-        [STORAGE_KEYS.TOKEN, authData.token],
-        [STORAGE_KEYS.USER, JSON.stringify(authData.user)],
+        [AUTH_STORAGE_KEYS.TOKEN, authData.token],
+        [AUTH_STORAGE_KEYS.USER, JSON.stringify(authData.user)],
       ]);
-      await apiClient.setAuthToken(authData.token);
     } catch (error) {
       console.error('Store auth data error:', error);
       throw new Error('Failed to store authentication data');
