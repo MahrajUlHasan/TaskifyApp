@@ -133,7 +133,7 @@ const EisenhowerMatrixScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={[]}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Eisenhower Matrix</Text>

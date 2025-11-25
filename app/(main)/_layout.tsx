@@ -1,11 +1,8 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../contexts/AuthContext';
 
 export default function MainLayout() {
-  const { user } = useAuth();
-
   return (
     <Tabs
       screenOptions={{
@@ -33,6 +30,15 @@ export default function MainLayout() {
         }}
       />
       <Tabs.Screen
+        name="pomodoro"
+        options={{
+          title: 'Pomodoro',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'timer' : 'timer-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
@@ -41,17 +47,6 @@ export default function MainLayout() {
           ),
         }}
       />
-      {user?.role === 'ADMIN' && (
-        <Tabs.Screen
-          name="admin"
-          options={{
-            title: 'Admin',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'settings' : 'settings-outline'} size={24} color={color} />
-            ),
-          }}
-        />
-      )}
     </Tabs>
   );
 }
