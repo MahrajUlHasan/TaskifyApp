@@ -8,6 +8,7 @@ import {
   FlatList,
   Modal,
   TextInput,
+  BackHandler,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTask } from '../contexts/TaskContext';
@@ -21,21 +22,42 @@ import {
   getMotivationalMessage,
   PomodoroSchedule,
 } from '../utils/pomodoroUtils';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
 const PomodoroScreen: React.FC = () => {
   const { tasks, fetchTasks } = useTask();
+  const navigation = useNavigation();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [estimatedMinutes, setEstimatedMinutes] = useState('');
   const [showEstimateModal, setShowEstimateModal] = useState(false);
   const [pomodoroSchedule, setPomodoroSchedule] = useState<PomodoroSchedule | null>(null);
-  
+
   // Timer state
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Hide tab bar when timer is running
+  useEffect(() => {
+    navigation.setOptions({
+      tabBarStyle: isRunning ? { display: 'none' } : undefined,
+    });
+  }, [isRunning, navigation]);
+
+  // Handle Android back button when timer is running
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (isRunning) {
+        handleStop();
+        return true; // Prevent default back action
+      }
+      return false; // Allow default back action
+    });
+
+    return () => backHandler.remove();
+  }, [isRunning]);
 
   // Refresh tasks when screen is focused
   useFocusEffect(
@@ -235,20 +257,16 @@ const PomodoroScreen: React.FC = () => {
   const sessionType = currentSession?.type || 'work';
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>🍅 Pomodoro Timer</Text>
-          <Text style={styles.headerSubtitle}>Select a task to start focusing</Text>
-        </View>
-
-        {isRunning && selectedTask && currentSession ? (
-          <View style={[styles.timerContainer, { backgroundColor: getSessionTypeColor(sessionType) }]}>
+    <>
+      {isRunning && selectedTask && currentSession ? (
+        // Full-screen timer overlay
+        <View style={[styles.fullScreenTimer, { backgroundColor: getSessionTypeColor(sessionType) }]}>
+          <SafeAreaView style={styles.timerSafeArea} edges={['top']}>
             <Text style={styles.currentTaskTitle}>{selectedTask.title}</Text>
             <Text style={styles.sessionType}>{getSessionTypeName(sessionType)}</Text>
             <Text style={styles.timerText}>{formatTime(remainingSeconds)}</Text>
             <Text style={styles.motivationalText}>{getMotivationalMessage(sessionType)}</Text>
-            
+
             <View style={styles.progressInfo}>
               <Text style={styles.progressText}>
                 Session {currentSessionIndex + 1} of {pomodoroSchedule?.sessions.length}
@@ -264,7 +282,7 @@ const PomodoroScreen: React.FC = () => {
                   {isPaused ? '▶️ Resume' : '⏸️ Pause'}
                 </Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={[styles.timerButton, styles.stopButton]}
                 onPress={handleStop}
@@ -272,68 +290,78 @@ const PomodoroScreen: React.FC = () => {
                 <Text style={styles.timerButtonText}>⏹️ Stop</Text>
               </TouchableOpacity>
             </View>
+          </SafeAreaView>
+        </View>
+      ) : (
+        // Task selection screen
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <View style={styles.container}>
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>🍅 Pomodoro Timer</Text>
+              <Text style={styles.headerSubtitle}>Select a task to start focusing</Text>
+            </View>
+
+            <FlatList
+              data={sortedTasks}
+              renderItem={renderTaskItem}
+              keyExtractor={item => item.id}
+              contentContainerStyle={styles.taskList}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No tasks available</Text>
+                  <Text style={styles.emptySubtext}>Create a task to start using Pomodoro</Text>
+                </View>
+              }
+            />
           </View>
-        ) : (
-          <FlatList
-            data={sortedTasks}
-            renderItem={renderTaskItem}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.taskList}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No tasks available</Text>
-                <Text style={styles.emptySubtext}>Create a task to start using Pomodoro</Text>
-              </View>
-            }
-          />
-        )}
+        </SafeAreaView>
+      )}
 
-        {/* Estimate Modal */}
-        <Modal
-          visible={showEstimateModal}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setShowEstimateModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Estimate Time</Text>
-              <Text style={styles.modalSubtitle}>
-                How many minutes do you need to complete this task?
-              </Text>
-              
-              <TextInput
-                style={styles.input}
-                placeholder="Enter minutes (e.g., 60)"
-                keyboardType="numeric"
-                value={estimatedMinutes}
-                onChangeText={setEstimatedMinutes}
-              />
+      {/* Estimate Modal */}
+      <Modal
+        visible={showEstimateModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowEstimateModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Estimate Time</Text>
+            <Text style={styles.modalSubtitle}>
+              How many minutes do you need to complete this task?
+            </Text>
 
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.cancelButton]}
-                  onPress={() => {
-                    setShowEstimateModal(false);
-                    setSelectedTask(null);
-                    setEstimatedMinutes('');
-                  }}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.startButton]}
-                  onPress={handleStartPomodoro}
-                >
-                  <Text style={styles.startButtonText}>Start Pomodoro</Text>
-                </TouchableOpacity>
-              </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter minutes (e.g., 60)"
+              keyboardType="numeric"
+              value={estimatedMinutes}
+              onChangeText={setEstimatedMinutes}
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setShowEstimateModal(false);
+                  setSelectedTask(null);
+                  setEstimatedMinutes('');
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.startButton]}
+                onPress={handleStartPomodoro}
+              >
+                <Text style={styles.startButtonText}>Start Pomodoro</Text>
+              </TouchableOpacity>
             </View>
           </View>
-        </Modal>
-      </View>
-    </SafeAreaView>
+        </View>
+      </Modal>
+    </>
   );
 };
 
@@ -409,7 +437,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
   },
-  timerContainer: {
+  // Full-screen timer styles
+  fullScreenTimer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: 9999,
+  },
+  timerSafeArea: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
