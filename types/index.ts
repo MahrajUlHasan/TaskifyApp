@@ -106,6 +106,7 @@ export interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   adminLogin: (username: string, password: string) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
