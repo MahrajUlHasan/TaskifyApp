@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -9,17 +9,32 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'expo-router';
+import {GoogleSignin} from "@react-native-google-signin/google-signin";
+import {GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID} from "@/config/googleConfig";
 
 const LoginScreen: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const { login, loginWithGoogle } = useAuth();
   const router = useRouter();
+  useEffect(() => {
+    GoogleSignin.configure(
+        {
+            webClientId: GOOGLE_WEB_CLIENT_ID,
+            iosClientId: GOOGLE_IOS_CLIENT_ID,
+            profileImageSize : 150,
+
+        }
+    )
+  }, []);
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
@@ -38,6 +53,41 @@ const LoginScreen: React.FC = () => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsGoogleLoading(true);
+      await loginWithGoogle();
+
+      // Success - navigate to main app
+      router.replace('/(main)/tasks');
+    } catch (error: any) {
+      // Handle errors
+      console.error('LoginScreen: Google Sign-In error:', error);
+
+      // Don't show alert for user cancellation
+      if (error.message !== 'CANCELLED') {
+        Alert.alert(
+          'Google Sign-In Failed',
+          error.message || 'Unable to sign in with Google. Please try again.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Ensure we're on the login page after error
+                router.replace('/login');
+              }
+            }
+          ]
+        );
+      } else {
+        // User cancelled - stay on login page
+        console.log('LoginScreen: User cancelled Google Sign-In');
+      }
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
   const navigateToRegister = () => {
     router.push('/register');
   };
@@ -47,7 +97,7 @@ const LoginScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={[]}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -90,9 +140,32 @@ const LoginScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
 
+          {/* Divider */}
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.divider} />
+          </View>
+
+          {/* Google Sign-In Button */}
+          <TouchableOpacity
+            style={[styles.googleButton, isGoogleLoading && styles.buttonDisabled]}
+            onPress={handleGoogleSignIn}
+            disabled={isGoogleLoading || isLoading}
+          >
+            {isGoogleLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="logo-google" size={20} color="#fff" style={styles.googleIcon} />
+                <Text style={styles.googleButtonText}>Continue with Google</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
           <View style={styles.linkContainer}>
             <TouchableOpacity onPress={navigateToRegister}>
-              <Text style={styles.linkText}>Don't have an account? Sign Up</Text>
+              <Text style={styles.linkText}>Don&#39;t have an account? Sign Up</Text>
             </TouchableOpacity>
           </View>
 
@@ -170,6 +243,39 @@ const styles = StyleSheet.create({
     backgroundColor: '#ccc',
   },
   buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ddd',
+  },
+  dividerText: {
+    marginHorizontal: 10,
+    color: '#999',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  googleButton: {
+    backgroundColor: '#DB4437',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  googleIcon: {
+    marginRight: 10,
+  },
+  googleButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',

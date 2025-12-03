@@ -142,6 +142,11 @@ class AuthService {
       throw new Error('Failed to store authentication data');
     }
   }
+
+  // Public method to save auth data (for Google Sign-In)
+  async saveAuthData(user: User, token: string): Promise<void> {
+    await this.storeAuthData({ user, token });
+  }
 }
 
 export const authService = new AuthService();
