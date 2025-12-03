@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'expo-router';
+import {GoogleSignin} from "@react-native-google-signin/google-signin";
+import {GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID} from "@/config/googleConfig";
 
 const LoginScreen: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -23,6 +25,16 @@ const LoginScreen: React.FC = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { login, loginWithGoogle } = useAuth();
   const router = useRouter();
+  useEffect(() => {
+    GoogleSignin.configure(
+        {
+            webClientId: GOOGLE_WEB_CLIENT_ID,
+            iosClientId: GOOGLE_IOS_CLIENT_ID,
+            profileImageSize : 150,
+
+        }
+    )
+  }, []);
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {

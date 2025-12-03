@@ -11,6 +11,11 @@ import {
   isGoogleConfigured
 } from '../config/googleConfig';
 
+import { GoogleSignin , isSuccessResponse ,isErrorWithCode , statusCodes}  from "@react-native-google-signin/google-signin";
+
+
+
+
 // Complete auth session on web - required for proper redirect handling
 WebBrowser.maybeCompleteAuthSession();
 
@@ -200,54 +205,127 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const loginWithGoogle = async (): Promise<void> => {
-    try {
-      if (!isGoogleConfigured()) {
-        throw new Error('Google Sign-In is not configured. Please add your Client IDs in config/googleConfig.ts');
-      }
 
-      if (!request) {
-        throw new Error('Google Sign-In is not ready. Please try again.');
-      }
+    const loginWithGoogle = async (): Promise<void> => {
 
-      console.log('AuthContext: Starting Google Sign-In');
-      console.log('AuthContext: Redirect URI:', redirectUri);
+        try{
+            setIsLoading(true);
+            await GoogleSignin.hasPlayServices();
+            const response = await GoogleSignin.signIn();
+            if(isSuccessResponse(response))
+            {
 
-      // Trigger the Google Sign-In flow
-      const result = await promptAsync();
+                const {idToken,user} = response.data;
+                const {name , email , photo } = user;
 
-      console.log('AuthContext: Google Sign-In result:', result.type);
+                // Parse name into first and last name
+                const nameParts = name?.split(' ') || [];
+                const firstName = nameParts[0] || '';
+                const lastName = nameParts.slice(1).join(' ') || '';
 
-      if (result.type === 'cancel') {
-        console.log('AuthContext: User cancelled Google Sign-In');
-        throw new Error('CANCELLED');
-      }
+                // Create user object
+                const googleUser: User = {
+                  id: user.id || '',
+                  username: email || name || 'google_user',
+                  email: email || '',
+                  firstName: firstName,
+                  lastName: lastName,
+                  role: 'USER',
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                };
 
-      if (result.type === 'error') {
-        console.error('AuthContext: Google Sign-In error:', result.error);
-        throw new Error(result.error?.message || 'Authentication failed');
-      }
+                // Save user data and idToken
+                await authService.saveAuthData(googleUser, idToken || '');
 
-      if (result.type === 'dismiss') {
-        console.log('AuthContext: Google Sign-In dismissed');
-        throw new Error('CANCELLED');
-      }
+                // Update state
+                setUser(googleUser);
+                setToken(idToken || '');
 
-      // Success case is handled by the useEffect hook
-    } catch (error: any) {
-      console.error('AuthContext: Google Sign-In error:', error);
+                console.log('AuthContext: Google login complete (native)');
 
-      if (error.message === 'CANCELLED') {
-        throw error;
-      }
+            }
+            else{
+                // Sign-in was cancelled by user
+                throw new Error('CANCELLED');
+            }
+            setIsLoading(false);
 
-      throw new Error(error.message || 'Google Sign-In failed');
+        }
+        catch(error)
+        {
+            if(isErrorWithCode(error))
+            {
+                switch(error.code){
+                    case statusCodes.SIGN_IN_CANCELLED:
+                        throw new Error('CANCELLED');
+                    case statusCodes.IN_PROGRESS:
+                        throw new Error('IN_PROGRESS');
+                    case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+                        throw new Error('PLAY_SERVICES_NOT_AVAILABLE');
+                    default:
+                        throw new Error(error.code);
+                }
+
+            }
+            else
+            {
+                throw new Error('Google Sign-In failed');
+            }
+        }
+
     }
-  };
+
+  // const loginWithGoogle = async (): Promise<void> => {
+  //   try {
+  //     if (!isGoogleConfigured()) {
+  //       throw new Error('Google Sign-In is not configured. Please add your Client IDs in config/googleConfig.ts');
+  //     }
+  //
+  //     if (!request) {
+  //       throw new Error('Google Sign-In is not ready. Please try again.');
+  //     }
+  //
+  //     console.log('AuthContext: Starting Google Sign-In');
+  //     console.log('AuthContext: Redirect URI:', redirectUri);
+  //
+  //     // Trigger the Google Sign-In flow
+  //     const result = await promptAsync();
+  //
+  //     console.log('AuthContext: Google Sign-In result:', result.type);
+  //
+  //     if (result.type === 'cancel') {
+  //       console.log('AuthContext: User cancelled Google Sign-In');
+  //       throw new Error('CANCELLED');
+  //     }
+  //
+  //     if (result.type === 'error') {
+  //       console.error('AuthContext: Google Sign-In error:', result.error);
+  //       throw new Error(result.error?.message || 'Authentication failed');
+  //     }
+  //
+  //     if (result.type === 'dismiss') {
+  //       console.log('AuthContext: Google Sign-In dismissed');
+  //       throw new Error('CANCELLED');
+  //     }
+  //
+  //     // Success case is handled by the useEffect hook
+  //   } catch (error: any) {
+  //     console.error('AuthContext: Google Sign-In error:', error);
+  //
+  //     if (error.message === 'CANCELLED') {
+  //       throw error;
+  //     }
+  //
+  //     throw new Error(error.message || 'Google Sign-In failed');
+  //   }
+  // };
 
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true);
+
+      await GoogleSignin.signOut();
       console.log('AuthContext: Starting logout');
 
       await authService.logout();
