@@ -8,6 +8,7 @@ export interface User {
   role: 'USER' | 'ADMIN';
   createdAt: string;
   updatedAt: string;
+  profilePicture?: string; // Google profile picture URL
 }
 
 export interface LoginRequest {
@@ -40,6 +41,7 @@ export interface Task {
   updatedAt: string;
   userId: string;
   eisenhowerQuadrant: EisenhowerQuadrant;
+  googleCalendarEventId?: string; // Google Calendar event ID for sync
 }
 
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -61,6 +63,7 @@ export interface UpdateTaskRequest {
   status?: TaskStatus;
   dueDate?: string;
   eisenhowerQuadrant?: EisenhowerQuadrant;
+  googleCalendarEventId?: string;
 }
 
 // API Response types

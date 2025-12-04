@@ -233,6 +233,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   role: 'USER',
                   createdAt: new Date().toISOString(),
                   updatedAt: new Date().toISOString(),
+                  profilePicture: photo || undefined, // Save Google profile picture
                 };
 
                 // Save user data and idToken

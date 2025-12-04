@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { taskService } from '../services/taskService';
+import { googleCalendarService } from '../services/googleCalendarService';
 import { TaskContextType, Task, CreateTaskRequest, UpdateTaskRequest } from '../types';
 import { useAuth } from './AuthContext';
 
@@ -40,6 +41,15 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
       setIsLoading(true);
       setError(null);
       const newTask = await taskService.createTask(taskData);
+
+      // Sync with Google Calendar
+      const calendarEventId = await googleCalendarService.createCalendarEvent(newTask);
+      if (calendarEventId) {
+        // Update task with calendar event ID
+        newTask.googleCalendarEventId = calendarEventId;
+        await taskService.updateTask(newTask.id, { googleCalendarEventId: calendarEventId } as UpdateTaskRequest);
+      }
+
       setTasks(prevTasks => [...prevTasks, newTask]);
     } catch (err: any) {
       setError(err.message || 'Failed to create task');
@@ -55,6 +65,25 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
       setIsLoading(true);
       setError(null);
       const updatedTask = await taskService.updateTask(id, taskData);
+
+      // Sync with Google Calendar
+      if (updatedTask.googleCalendarEventId) {
+        await googleCalendarService.updateCalendarEvent(updatedTask, updatedTask.googleCalendarEventId);
+      } else {
+        // If no calendar event exists, try to find it or create one
+        const existingEventId = await googleCalendarService.findEventByTaskId(updatedTask.id);
+        if (existingEventId) {
+          await googleCalendarService.updateCalendarEvent(updatedTask, existingEventId);
+          updatedTask.googleCalendarEventId = existingEventId;
+        } else {
+          const newEventId = await googleCalendarService.createCalendarEvent(updatedTask);
+          if (newEventId) {
+            updatedTask.googleCalendarEventId = newEventId;
+            await taskService.updateTask(updatedTask.id, { googleCalendarEventId: newEventId } as UpdateTaskRequest);
+          }
+        }
+      }
+
       setTasks(prevTasks =>
         prevTasks.map(task => (task.id === id ? updatedTask : task))
       );
@@ -72,6 +101,22 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
       setIsLoading(true);
       setError(null);
       console.log('TaskContext: Starting delete task with id:', id);
+
+      // Find the task to get its calendar event ID
+      const taskToDelete = tasks.find(task => task.id === id);
+
+      // Delete from Google Calendar first
+      if (taskToDelete?.googleCalendarEventId) {
+        await googleCalendarService.deleteCalendarEvent(taskToDelete.googleCalendarEventId);
+      } else if (taskToDelete) {
+        // Try to find and delete the event by task ID
+        const eventId = await googleCalendarService.findEventByTaskId(taskToDelete.id);
+        if (eventId) {
+          await googleCalendarService.deleteCalendarEvent(eventId);
+        }
+      }
+
+      // Delete from local storage
       await taskService.deleteTask(id);
       setTasks(prevTasks => {
         const filteredTasks = prevTasks.filter(task => task.id !== id);

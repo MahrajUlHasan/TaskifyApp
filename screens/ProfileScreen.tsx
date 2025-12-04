@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
@@ -52,11 +53,18 @@ const ProfileScreen: React.FC = () => {
     <SafeAreaView style={styles.safeArea} edges={[]}>
       <ScrollView style={styles.container}>
         <View style={styles.header}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {user.firstName.charAt(0)}{user.lastName.charAt(0)}
-            </Text>
-          </View>
+          {user.profilePicture ? (
+            <Image
+              source={{ uri: user.profilePicture }}
+              style={styles.profileImage}
+            />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+              </Text>
+            </View>
+          )}
           <Text style={styles.userName}>
             {user.firstName} {user.lastName}
           </Text>
@@ -138,6 +146,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 16,
+  },
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     marginBottom: 16,
   },
   avatarText: {

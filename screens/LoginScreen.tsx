@@ -31,7 +31,10 @@ const LoginScreen: React.FC = () => {
             webClientId: GOOGLE_WEB_CLIENT_ID,
             iosClientId: GOOGLE_IOS_CLIENT_ID,
             profileImageSize : 150,
-
+            scopes: [
+              'https://www.googleapis.com/auth/calendar', // Full calendar access
+              'https://www.googleapis.com/auth/calendar.events', // Calendar events access
+            ],
         }
     )
   }, []);
