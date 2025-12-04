@@ -93,6 +93,7 @@ const RegisterScreen: React.FC = () => {
               <TextInput
                 style={styles.input}
                 placeholder="First Name"
+                placeholderTextColor="#999"
                 value={formData.firstName}
                 onChangeText={(value) => handleInputChange('firstName', value)}
                 autoCapitalize="words"
@@ -103,6 +104,7 @@ const RegisterScreen: React.FC = () => {
               <TextInput
                 style={styles.input}
                 placeholder="Last Name"
+                placeholderTextColor="#999"
                 value={formData.lastName}
                 onChangeText={(value) => handleInputChange('lastName', value)}
                 autoCapitalize="words"
@@ -115,6 +117,7 @@ const RegisterScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Username"
+              placeholderTextColor="#999"
               value={formData.username}
               onChangeText={(value) => handleInputChange('username', value)}
               autoCapitalize="none"
@@ -126,6 +129,7 @@ const RegisterScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Email"
+              placeholderTextColor="#999"
               value={formData.email}
               onChangeText={(value) => handleInputChange('email', value)}
               keyboardType="email-address"
@@ -138,6 +142,7 @@ const RegisterScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Password"
+              placeholderTextColor="#999"
               value={formData.password}
               onChangeText={(value) => handleInputChange('password', value)}
               secureTextEntry
@@ -150,6 +155,7 @@ const RegisterScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Confirm Password"
+              placeholderTextColor="#999"
               value={formData.confirmPassword}
               onChangeText={(value) => handleInputChange('confirmPassword', value)}
               secureTextEntry
@@ -237,6 +243,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     fontSize: 16,
     backgroundColor: '#f9f9f9',
+    color: '#333',
   },
   button: {
     backgroundColor: '#007AFF',

@@ -119,6 +119,7 @@ const AddTaskScreen: React.FC = () => {
           <TextInput
             style={styles.input}
             placeholder="Enter task title"
+            placeholderTextColor="#999"
             value={formData.title}
             onChangeText={(value) => handleInputChange('title', value)}
             maxLength={100}
@@ -130,6 +131,7 @@ const AddTaskScreen: React.FC = () => {
           <TextInput
             style={[styles.input, styles.textArea]}
             placeholder="Enter task description"
+            placeholderTextColor="#999"
             value={formData.description}
             onChangeText={(value) => handleInputChange('description', value)}
             multiline
@@ -272,6 +274,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     fontSize: 16,
     backgroundColor: 'white',
+    color: '#333',
   },
   textArea: {
     height: 100,

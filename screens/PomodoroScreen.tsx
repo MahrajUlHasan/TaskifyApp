@@ -334,6 +334,7 @@ const PomodoroScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Enter minutes (e.g., 60)"
+              placeholderTextColor="#999"
               keyboardType="numeric"
               value={estimatedMinutes}
               onChangeText={setEstimatedMinutes}
@@ -553,6 +554,7 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     marginBottom: 20,
+    color: '#333',
   },
   modalButtons: {
     flexDirection: 'row',

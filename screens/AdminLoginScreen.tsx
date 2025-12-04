@@ -60,6 +60,7 @@ const AdminLoginScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Admin Username"
+              placeholderTextColor="#999"
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
@@ -71,6 +72,7 @@ const AdminLoginScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Admin Password"
+              placeholderTextColor="#999"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -166,6 +168,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     fontSize: 16,
     backgroundColor: '#f9f9f9',
+    color: '#333',
   },
   adminButton: {
     backgroundColor: '#FF6B6B',

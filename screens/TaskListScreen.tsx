@@ -170,6 +170,7 @@ const TaskListScreen: React.FC = () => {
         <TextInput
           style={styles.searchInput}
           placeholder="Search tasks..."
+          placeholderTextColor="#999"
           value={searchQuery}
           onChangeText={setSearchQuery}
         />

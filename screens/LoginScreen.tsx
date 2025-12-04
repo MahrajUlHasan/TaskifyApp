@@ -114,6 +114,7 @@ const LoginScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Username"
+              placeholderTextColor="#999"
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
@@ -125,6 +126,7 @@ const LoginScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Password"
+              placeholderTextColor="#999"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -234,6 +236,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     fontSize: 16,
     backgroundColor: '#f9f9f9',
+    color: '#333',
   },
   button: {
     backgroundColor: '#007AFF',
